@@ -29,7 +29,7 @@ gi() {
 }
 
 # Function for getting repositories
-gg() {
+ghget() {
     ghq get -u -p "$1" && cd "$(ghq root)/github.com/${_}" || return
 }
 
