@@ -1,0 +1,158 @@
+#!/bin/bash
+# =============================================================================
+# 🧪 Dotfiles Pre-Push Linting Hook 🧪
+# =============================================================================
+# 🔍 Checks shell scripts for errors before pushing to remote
+# 🚨 Fails push if scripts contain errors
+# 🔧 Uses ShellCheck and Bashate for Bash scripts, custom linter for Zsh scripts
+
+# Set color variables
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+echo -e "${BLUE}🔍 Running pre-push checks...${NC}"
+
+# Check if required linters are installed
+if ! command -v shellcheck &> /dev/null; then
+    echo -e "${RED}❌ ShellCheck is not installed. Please install it with:${NC}"
+    echo -e "  brew install shellcheck"
+    exit 1
+fi
+
+if ! command -v bashate &> /dev/null; then
+    echo -e "${RED}❌ Bashate is not installed. Please install it with:${NC}"
+    echo -e "  brew install bashate"
+    exit 1
+fi
+
+# Check if our custom zsh-lint script exists
+if [ ! -f "$(git rev-parse --show-toplevel)/bin/zsh-lint" ]; then
+    echo -e "${YELLOW}⚠️ Custom zsh-lint script not found.${NC}"
+    echo -e "${YELLOW}⚠️ Zsh scripts will be skipped in linting.${NC}"
+    ZSH_LINT_AVAILABLE=0
+else
+    ZSH_LINT_AVAILABLE=1
+fi
+
+# Function to get all shell scripts in the repo
+find_shell_scripts() {
+    git ls-files | grep -E '\.(sh|bash)$' | grep -v "\.git"
+    # Also find files with shell shebang (excluding .zsh files handled separately)
+    git ls-files | grep -v "\.zsh$" | xargs file | grep "shell script" | cut -d':' -f1
+}
+
+# Function to get all Zsh scripts in the repo
+find_zsh_scripts() {
+    git ls-files | grep -E '\.zsh$' | grep -v "\.git"
+    # Also find files with zsh shebang
+    git ls-files | xargs file | grep "zsh script" | cut -d':' -f1
+}
+
+# Get unique list of shell scripts
+SHELL_SCRIPTS=$(find_shell_scripts | sort | uniq)
+ZSH_SCRIPTS=$(find_zsh_scripts | sort | uniq)
+
+if [ -z "$SHELL_SCRIPTS" ] && [ -z "$ZSH_SCRIPTS" ]; then
+    echo -e "${GREEN}✅ No shell scripts to check.${NC}"
+    exit 0
+fi
+
+# Count scripts
+SHELL_COUNT=$(echo "$SHELL_SCRIPTS" | wc -l | tr -d ' ')
+ZSH_COUNT=$(echo "$ZSH_SCRIPTS" | wc -l | tr -d ' ')
+
+echo -e "${BLUE}🔎 Found $SHELL_COUNT regular shell scripts and $ZSH_COUNT Zsh scripts to check.${NC}"
+
+# Initialize error flag
+HAS_ERRORS=0
+
+# Check regular shell scripts with ShellCheck and Bashate
+if [ -n "$SHELL_SCRIPTS" ]; then
+    echo -e "${BLUE}🔨 Running ShellCheck on regular shell scripts...${NC}"
+    for file in $SHELL_SCRIPTS; do
+        # Skip symlinks
+        if [ -L "$file" ]; then
+            continue
+        fi
+        
+        # Only check files that exist
+        if [ ! -f "$file" ]; then
+            continue
+        fi
+        
+        # Run shellcheck
+        shellcheck_output=$(shellcheck -a -o all -e SC1090,SC1091,SC2034 "$file" 2>&1)
+        if [ $? -ne 0 ]; then
+            echo -e "${RED}❌ ShellCheck found issues in $file:${NC}"
+            echo "$shellcheck_output"
+            HAS_ERRORS=1
+        else
+            echo -e "${GREEN}✅ $file passed ShellCheck${NC}"
+        fi
+    done
+
+    echo -e "${BLUE}🔨 Running Bashate on regular shell scripts...${NC}"
+    for file in $SHELL_SCRIPTS; do
+        # Skip symlinks
+        if [ -L "$file" ]; then
+            continue
+        fi
+        
+        # Only check files that exist
+        if [ ! -f "$file" ]; then
+            continue
+        fi
+        
+        # Run bashate
+        bashate_output=$(bashate --ignore E006,E010,E011 "$file" 2>&1)
+        if [ $? -ne 0 ]; then
+            echo -e "${RED}❌ Bashate found issues in $file:${NC}"
+            echo "$bashate_output"
+            HAS_ERRORS=1
+        else
+            echo -e "${GREEN}✅ $file passed Bashate${NC}"
+        fi
+    done
+fi
+
+# Check Zsh scripts with custom linter
+if [ -n "$ZSH_SCRIPTS" ] && [ $ZSH_LINT_AVAILABLE -eq 1 ]; then
+    echo -e "${BLUE}🔨 Running Zsh linter on Zsh scripts...${NC}"
+    for file in $ZSH_SCRIPTS; do
+        # Skip symlinks
+        if [ -L "$file" ]; then
+            continue
+        fi
+        
+        # Only check files that exist
+        if [ ! -f "$file" ]; then
+            continue
+        fi
+        
+        # Run our custom zsh-lint
+        zsh_lint_output=$($(git rev-parse --show-toplevel)/bin/zsh-lint "$file" 2>&1)
+        if [ $? -ne 0 ]; then
+            echo -e "${RED}❌ Zsh linter found issues in $file:${NC}"
+            echo "$zsh_lint_output"
+            HAS_ERRORS=1
+        else
+            echo -e "${GREEN}✅ $file passed Zsh linting${NC}"
+        fi
+    done
+else
+    echo -e "${YELLOW}⚠️ Skipping Zsh linting as either no Zsh files or linter not available.${NC}"
+fi
+
+# Determine exit status
+if [ $HAS_ERRORS -eq 1 ]; then
+    echo -e "${RED}❌ Push aborted due to linting errors.${NC}"
+    echo -e "${YELLOW}📝 Fix the issues above and try again.${NC}"
+    echo -e "${YELLOW}💡 TIP: You can use 'bin/zsh-fix' to automatically fix some common Zsh issues.${NC}"
+    exit 1
+else
+    echo -e "${GREEN}✅ All shell scripts passed linting checks.${NC}"
+    exit 0
+fi
