@@ -9,7 +9,10 @@
 \!TODO
 \!README.md
 \!CLAUDE.md
+\!ZSH-LINT-GUIDE.md
 \!.prettierrc
+\!bin/zsh-lint
+\!bin/zsh-fix
 
 # Ignore specific directories
 node_modules/
