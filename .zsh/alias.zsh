@@ -1,5 +1,12 @@
 #!/bin/bash
+# =============================================================================
+# 🛠️ Shell Aliases and Functions 🛠️
+# =============================================================================
+# 🔧 Provides helpful aliases and functions for daily shell usage
+# 🚀 Makes common operations faster and more convenient
+# 💡 Organized by category for better maintainability
 
+# System aliases
 alias dmesg='sudo demsg'
 alias s="source ~/.zshrc"
 alias ls="gls --color=auto" # require `brew install coreutils`
@@ -15,9 +22,23 @@ alias cp="cp -p"
 alias mkdir="mkdir -p"
 alias find="find -E"
 alias x="exit"
-alias gi='(){ cd $(ghq root)/$(ghq list | peco --query "$*") }' # require `brew install ghq peco`
-alias gg='(){ ghq get -u -p $1 && $(ghq root)/github.com/$_ }'
-alias gho='(){ gh repo view --web $(ghq list | peco --query "$*" | cut -d "/" -f2,3) }' # require `brew install ghq peco`
+
+# Repository navigation (require `brew install ghq peco`)
+gi() {
+    cd "$(ghq root)/$(ghq list | peco --query "$*")" || return
+}
+
+# Function for getting repositories
+gg() {
+    ghq get -u -p "$1" && cd "$(ghq root)/github.com/${_}" || return
+}
+
+# Function for viewing repo in browser (require `brew install ghq peco`)
+gho() {
+    gh repo view --web "$(ghq list | peco --query "$*" | cut -d "/" -f2,3)"
+}
+
+# Git and GitHub related aliases
 alias ghb="gh repo view --web"
 alias mv="mv -i"
 alias rm="mv2trash"
@@ -29,20 +50,58 @@ alias atom="open -a /Applications/Atom.app/Contents/MacOS/Atom"
 alias diff="colordiff"
 alias ydla="youtube-dl -x --audio-format=mp3"
 alias ydlv="youtube-dl --format=mp4"
-alias it='(){ mv $1 ~/Music/iTunes/iTunes\ Media/Automatically\ Add\ to\ iTunes.localized/ }'
-alias brew-cask-cleanup='for c in /usr/local/Caskroom/*; do vl=(`ls -t $c`) && for v in "${vl[@]:1}"; do grm -rf "$c/$v"; done; done'
-alias ql='qlmanage -p "$@" >& /dev/null'
+
+# Function to move file to iTunes import folder
+it() {
+    mv "$1" ~/Music/iTunes/iTunes\ Media/Automatically\ Add\ to\ iTunes.localized/
+}
+
+# Function to clean up old cask versions
+brew-cask-cleanup() {
+    for c in /usr/local/Caskroom/*; do
+        mapfile -t vl < <(ls -t "${c}")
+        for v in "${vl[@]:1}"; do
+            grm -rf "${c}/${v}"
+        done
+    done
+}
+
+# Function for QuickLook preview
+ql() {
+    qlmanage -p "$@" >& /dev/null
+}
+
 alias tree="tree -N"
-alias date-to-time='(){ date -j -f "%Y-%m-%d %H:%M:%S" "$1" +%s }'
-alias time-to-date='(){ date -r $1 +"%Y-%m-%d %H:%M:%S" }'
-alias hl='(){ pbpaste | highlight -O rtf -S $1 -s "molokai" -k "Menlo" -K 24 | pbcopy }'
+
+# Function to convert date to timestamp
+date-to-time() {
+    date -j -f "%Y-%m-%d %H:%M:%S" "$1" +%s
+}
+
+# Function to convert timestamp to date
+time-to-date() {
+    date -r "$1" +"%Y-%m-%d %H:%M:%S"
+}
+
+# Function for syntax highlighting clipboard contents
+hl() {
+    pbpaste | highlight -O rtf -S "$1" -s "molokai" -k "Menlo" -K 24 | pbcopy
+}
+
+# Development aliases
 alias psy="psysh"
 alias sed="gsed"
 alias sf="bin/console"
 alias pu="bin/phpunit --stop-on-failure"
 alias chrome='open -a "Google Chrome"'
 alias zenn-slug="php -r 'echo substr(md5(uniqid()), 0, 14);' | pbcopy"
-alias add-bom='(){ echo -ne "\xef\xbb\xbf" | cat - $1 > $1.bom.csv }'
+
+# Function to add BOM to a file
+add-bom() {
+    echo -ne "\xef\xbb\xbf" | cat - "$1" > "$1.bom.csv"
+}
+
+# System convenience aliases
 alias beep='for i in {1..3}; do afplay /System/Library/Sounds/Glass.aiff; done'
 alias rm='rm -Rf'
 #gcp 'git add .* && git commit -m $1 || git commit -m \'wip\' '
@@ -52,7 +111,7 @@ alias vim='nvim'
 alias vi='nvim'
 alias icloud='cd ~/Library/Mobile\ Documents/com\~apple\~CloudDocs/'
 alias '?'='gh copilot explain'
-alias '??'='gh copilot suggest' 
+alias '??'='gh copilot suggest'
 #alias pull='gh pull --rebase'
 #alias push='gh push --force'
-#alias fu='gcp && push ||pull && gcp' 
+#alias fu='gcp && push ||pull && gcp'

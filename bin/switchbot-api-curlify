@@ -1,8 +1,13 @@
 #!/bin/sh -eu
+# =============================================================================
+# 🤖 SwitchBot API Curl Command Generator 🤖
+# =============================================================================
+# 🔑 Generates authenticated curl commands for SwitchBot API
+# 📝 Supports device listing and command execution
 
 if [ $# -lt 2 ]; then
-  echo "Usage: $0 <token> <secret> [<deviceId>]"
-  exit 1
+    echo "Usage: $0 <token> <secret> [<deviceId>]"
+    exit 1
 fi
 
 token=$1
@@ -11,17 +16,31 @@ deviceId=${3:-}
 
 t=$(date -v+100y +%s000)
 nonce=$(uuidgen)
-sign=$(/bin/echo -n "$token$t$nonce" | openssl dgst -sha256 -hmac $secret -binary | base64)
+# Use printf instead of echo -n for better POSIX compatibility
+sign=$(printf "%s" "${token}${t}${nonce}" | \
+       openssl dgst -sha256 -hmac "${secret}" -binary | \
+       base64)
 
 if [ $# -eq 2 ]; then
-  cat <<EOS
+    cat <<EOS
 # @see https://github.com/OpenWonderLabs/SwitchBotAPI
-curl https://api.switch-bot.com/v1.1/devices -H "Content-Type: application/json" -H "Authorization: $token" -H "t: $t" -H "nonce: $nonce" -H "sign: $sign"
+curl https://api.switch-bot.com/v1.1/devices \
+     -H "Content-Type: application/json" \
+     -H "Authorization: ${token}" \
+     -H "t: ${t}" \
+     -H "nonce: ${nonce}" \
+     -H "sign: ${sign}"
 EOS
-  exit 0
+    exit 0
 fi
 
 cat <<EOS
 # @see https://github.com/OpenWonderLabs/SwitchBotAPI
-curl -X POST https://api.switch-bot.com/v1.1/devices/$deviceId/commands -H "Content-Type: application/json" -H "Authorization: $token" -H "t: $t" -H "nonce: $nonce" -H "sign: $sign" -d '{"commandType":"command","command":"turnOn","parameter":"default"}'
+curl -X POST https://api.switch-bot.com/v1.1/devices/${deviceId}/commands \
+     -H "Content-Type: application/json" \
+     -H "Authorization: ${token}" \
+     -H "t: ${t}" \
+     -H "nonce: ${nonce}" \
+     -H "sign: ${sign}" \
+     -d '{"commandType":"command","command":"turnOn","parameter":"default"}'
 EOS

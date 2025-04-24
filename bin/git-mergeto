@@ -1,11 +1,16 @@
 #!/bin/sh -eu
+# =============================================================================
+# 🔀 Git Branch Merge Utility 🔀
+# =============================================================================
+# 🌿 Simplifies merging the current branch into another branch
+# 🧹 Automatically deletes the source branch after merging
 
-BRANCH=`git symbolic-ref HEAD 2>/dev/null | cut -d/ -f3`
+BRANCH=$(git symbolic-ref HEAD 2>/dev/null | cut -d/ -f3)
 if [ $# -eq 0 ]; then
     TO='master'
 else
-    TO=$1
+    TO="$1"
 fi
-git checkout $TO
-git merge $BRANCH
-git branch -d $BRANCH
+git checkout "${TO}"
+git merge "${BRANCH}"
+git branch -d "${BRANCH}"

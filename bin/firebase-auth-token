@@ -1,4 +1,15 @@
 #!/bin/sh -eu
+# =============================================================================
+# 🔥 Firebase Auth Token Generator 🔥
+# =============================================================================
+# 🔑 Generates authentication tokens for Firebase API
+# 📝 Uses email and password to generate secure tokens
+
+# Check for required parameters
+if [ $# -lt 3 ]; then
+    echo "Usage: $0 <apiKey> <email> <password>"
+    exit 1
+fi
 
 apiKey=${1}
 email=${2}
