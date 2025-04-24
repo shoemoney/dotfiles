@@ -1,1 +1,28 @@
-.gitconfig.local
+# Ignore all files by default
+*
+
+# Don't ignore directories
+\!*/
+
+# Don't ignore these files
+\!.gitignore
+\!TODO
+\!README.md
+\!CLAUDE.md
+\!.prettierrc
+
+# Ignore specific directories
+node_modules/
+.DS_Store
+*.log
+*.swp
+.env
+.env.*
+.vscode/
+.idea/
+tmp/
+temp/
+dist/
+build/
+repos/
+web/

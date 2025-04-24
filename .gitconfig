@@ -1,6 +1,6 @@
 [user]
-	name = Takashi Kanemoto
-	email = ttskch@gmail.com
+	name = Jeremy Schoemaker
+	email = jeremy@shoemoney.com
 [core]
 	excludesfile = ~/.gitignore_global
 	precomposeunicode = true

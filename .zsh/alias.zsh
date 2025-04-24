@@ -1,4 +1,7 @@
-alias s="source ~/.zshrc && tmux source-file ~/.tmux.conf"
+#!/bin/bash
+
+alias dmesg='sudo demsg'
+alias s="source ~/.zshrc"
 alias ls="gls --color=auto" # require `brew install coreutils`
 alias ll="ls -l"
 alias la="ls -a"
@@ -20,7 +23,7 @@ alias mv="mv -i"
 alias rm="mv2trash"
 alias grm="/usr/local/bin/grm" # overwite "git rm" alias from git.plugin.zsh, require `brew install coreutils`
 alias mysql="mysql --pager='less -S -n -i -F -X' --auto-rehash"
-alias pst="phpstorm"
+alias pstorm="phpstorm"
 alias chm="open -a \"Google Chrome\""
 alias atom="open -a /Applications/Atom.app/Contents/MacOS/Atom"
 alias diff="colordiff"
@@ -41,3 +44,15 @@ alias chrome='open -a "Google Chrome"'
 alias zenn-slug="php -r 'echo substr(md5(uniqid()), 0, 14);' | pbcopy"
 alias add-bom='(){ echo -ne "\xef\xbb\xbf" | cat - $1 > $1.bom.csv }'
 alias beep='for i in {1..3}; do afplay /System/Library/Sounds/Glass.aiff; done'
+alias rm='rm -Rf'
+#gcp 'git add .* && git commit -m $1 || git commit -m \'wip\' '
+alias rm='sudo rm -rf'
+alias top='btm -b'
+alias vim='nvim'
+alias vi='nvim'
+alias icloud='cd ~/Library/Mobile\ Documents/com\~apple\~CloudDocs/'
+alias '?'='gh copilot explain'
+alias '??'='gh copilot suggest' 
+#alias pull='gh pull --rebase'
+#alias push='gh push --force'
+#alias fu='gcp && push ||pull && gcp' 
