@@ -1,0 +1,78 @@
+#!/bin/bash
+# =============================================================================
+# 🛠️ Zsh Script Fixer 🛠️
+# =============================================================================
+# 🔧 Automatically fixes common issues in Zsh scripts
+# 🚀 Formats code according to best practices
+# 💡 Makes scripts more consistent and maintainable
+
+set -e
+
+# Set color variables
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+echo -e "${BLUE}🔧 ZSH Fixer - Fixing common issues in Zsh scripts${NC}"
+
+if [ $# -eq 0 ]; then
+    echo -e "${YELLOW}Usage: $0 <zsh-file1> [<zsh-file2> ...]${NC}"
+    exit 1
+fi
+
+for file in "$@"; do
+    if [ ! -f "$file" ]; then
+        echo -e "${RED}File not found: $file${NC}"
+        continue
+    fi
+
+    echo -e "${BLUE}Fixing $file...${NC}"
+
+    # Create a backup
+    cp "$file" "${file}.bak"
+    echo -e "${BLUE}Backup created at ${file}.bak${NC}"
+
+    # 1. Ensure proper shebang
+    if ! grep -q "^#!/bin/zsh" "$file" && ! grep -q "^#!/usr/bin/env zsh" "$file"; then
+        echo -e "${YELLOW}Adding proper shebang...${NC}"
+        sed -i.temp '1s|^|#!/bin/zsh\n|' "$file"
+        rm -f "${file}.temp"
+    fi
+
+    # 2. Fix trailing whitespace
+    echo -e "${BLUE}Removing trailing whitespace...${NC}"
+    sed -i.temp 's/[[:space:]]*$//' "$file"
+    rm -f "${file}.temp"
+    
+    # 3. Ensure file ends with newline
+    echo -e "${BLUE}Ensuring file ends with newline...${NC}"
+    sed -i.temp -e '$a\\' "$file"
+    rm -f "${file}.temp"
+
+    # 4. Use shfmt to format the file properly if available
+    if command -v shfmt >/dev/null 2>&1; then
+        echo -e "${BLUE}Formatting with shfmt...${NC}"
+        TMP_FILE=$(mktemp)
+        if shfmt -i 4 -ln zsh "$file" > "$TMP_FILE"; then
+            mv "$TMP_FILE" "$file"
+        else
+            echo -e "${RED}Error formatting with shfmt${NC}"
+            rm -f "$TMP_FILE"
+        fi
+    fi
+
+    # 5. Fix variable references to use ${VAR} format
+    echo -e "${BLUE}Fixing variable references...${NC}"
+    # This is a simplistic approach - a more comprehensive solution would use a proper parser
+    sed -i.temp 's/\$\([a-zA-Z0-9_][a-zA-Z0-9_]*\)/${\1}/g' "$file"
+    rm -f "${file}.temp"
+
+    echo -e "${GREEN}✅ Fixes applied to $file${NC}"
+    echo ""
+done
+
+echo -e "${GREEN}✅ All files processed!${NC}"
+echo -e "${YELLOW}Note: Some complex issues may need manual fixing.${NC}"
+exit 0

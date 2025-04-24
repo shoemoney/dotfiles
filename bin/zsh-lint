@@ -1,0 +1,115 @@
+#!/bin/bash
+# =============================================================================
+# 🧪 Zsh Script Linter 🧪
+# =============================================================================
+# 🔍 Custom linter specifically for Zsh scripts
+# 🚀 Uses a combination of tools to check Zsh syntax and style
+# 💡 Provides helpful warnings and suggestions
+
+set -e
+
+# Set color variables
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+echo -e "${BLUE}🔍 ZSH Linter - Checking Zsh scripts${NC}"
+
+if [ $# -eq 0 ]; then
+    echo -e "${YELLOW}Usage: $0 <zsh-file1> [<zsh-file2> ...]${NC}"
+    exit 1
+fi
+
+# Initialize error counter
+ERRORS=0
+
+for file in "$@"; do
+    if [ ! -f "$file" ]; then
+        echo -e "${RED}File not found: $file${NC}"
+        ERRORS=$((ERRORS + 1))
+        continue
+    fi
+
+    echo -e "${BLUE}Checking $file...${NC}"
+
+    # 1. Check if the file has a proper shebang for Zsh
+    if ! grep -q "^#!/bin/zsh" "$file" && ! grep -q "^#!/usr/bin/env zsh" "$file"; then
+        echo -e "${YELLOW}⚠️ Missing or incorrect shebang. Should be #!/bin/zsh or #!/usr/bin/env zsh${NC}"
+        ERRORS=$((ERRORS + 1))
+    fi
+
+    # 2. Check for syntax errors using zsh -n
+    echo -e "${BLUE}Checking syntax...${NC}"
+    if ! zsh -n "$file"; then
+        echo -e "${RED}❌ Zsh syntax check failed${NC}"
+        ERRORS=$((ERRORS + 1))
+    else
+        echo -e "${GREEN}✅ Zsh syntax OK${NC}"
+    fi
+
+    # 3. Check for common style issues
+    echo -e "${BLUE}Checking style...${NC}"
+    
+    # 3.1 Check for trailing whitespace
+    if grep -q "[[:space:]]$" "$file"; then
+        echo -e "${YELLOW}⚠️ Trailing whitespace found${NC}"
+        ERRORS=$((ERRORS + 1))
+    fi
+    
+    # 3.2 Check for tabs (if you prefer spaces)
+    if grep -q $'\t' "$file"; then
+        echo -e "${YELLOW}⚠️ Tab characters found (use spaces instead)${NC}"
+        ERRORS=$((ERRORS + 1))
+    fi
+    
+    # 3.3 Check for lines longer than 100 characters
+    LONG_LINES=$(grep -n '.\{100\}' "$file" | wc -l)
+    if [ "$LONG_LINES" -gt 0 ]; then
+        echo -e "${YELLOW}⚠️ $LONG_LINES lines are longer than 100 characters${NC}"
+        ERRORS=$((ERRORS + 1))
+    fi
+    
+    # 3.4 Check if file ends with a newline
+    if [ "$(tail -c 1 "$file" | wc -l)" -eq 0 ]; then
+        echo -e "${YELLOW}⚠️ File does not end with a newline${NC}"
+        ERRORS=$((ERRORS + 1))
+    fi
+
+    # 4. Check for common Zsh-specific issues
+    echo -e "${BLUE}Checking for Zsh-specific issues...${NC}"
+    
+    # 4.1 Check for usage of bash-specific features that may not work in zsh
+    if grep -q "\[\[ [^]]*=[^=][^]]*\]\]" "$file"; then
+        echo -e "${YELLOW}⚠️ Using = for string comparison in [[]] (use == or = for Zsh)${NC}"
+        ERRORS=$((ERRORS + 1))
+    fi
+
+    # 4.2 Check for potential unquoted variables
+    if grep -E -q '\$[a-zA-Z0-9_]+[^"]' "$file"; then
+        echo -e "${YELLOW}⚠️ Potential unquoted variables found - consider using \"\${VAR}\" format${NC}"
+        ERRORS=$((ERRORS + 1))
+    fi
+    
+    # If shfmt is available, use it to check formatting
+    if command -v shfmt >/dev/null 2>&1; then
+        echo -e "${BLUE}Checking formatting with shfmt...${NC}"
+        if ! shfmt -i 4 -ln zsh -d "$file" >/dev/null 2>&1; then
+            echo -e "${YELLOW}⚠️ Formatting issues detected by shfmt${NC}"
+            ERRORS=$((ERRORS + 1))
+        else
+            echo -e "${GREEN}✅ Formatting OK${NC}"
+        fi
+    fi
+
+    echo ""
+done
+
+if [ $ERRORS -eq 0 ]; then
+    echo -e "${GREEN}✅ All checks passed!${NC}"
+    exit 0
+else
+    echo -e "${RED}❌ Found $ERRORS issue(s)${NC}"
+    exit 1
+fi
