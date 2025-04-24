@@ -44,8 +44,8 @@ zinit light-mode for \
     zinit light zpm-zsh/colors
 setopt autocd
 zinit light zsh-users/zsh-autosuggestions
-zinit light zdharma/fast-syntax-highlighting
-zinit load zdharma/history-search-multi-word
+zinit light zdharma-continuum/fast-syntax-highlighting
+zinit load zdharma-continuum/history-search-multi-word
 # Don't load other prompts when using Starship
 # Load starship theme - Enabled by default
 # line 1: `starship` binary as command, from github release
