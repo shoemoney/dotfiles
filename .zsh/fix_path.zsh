@@ -1,0 +1,1 @@
+/Users/shoemoney/dotfiles/.zsh/fix_path.zsh

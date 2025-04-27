@@ -10,6 +10,11 @@ if [[ "$TERM" == "xterm-ghostty" || "$TERM" == "ghostty" ]]; then
   export TERM="xterm-256color"
 fi
 
+# 🚨 Emergency path fixes - load first to ensure commands work
+if [[ -f ~/.zsh/fix_path.zsh ]]; then
+  source ~/.zsh/fix_path.zsh
+fi
+
 # Prevent duplicate compinit calls
 skip_global_compinit=1
 
