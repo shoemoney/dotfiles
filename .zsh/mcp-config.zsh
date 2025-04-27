@@ -6,11 +6,13 @@
 # 🚀 Configures paths, aliases and helper functions
 
 # 📂 Define MCP server paths
-export MCP_SERVERS_DIR="$HOME/dotfiles/.zsh/mcp-servers"
+export MCP_SERVERS_DIR="$HOME/mcp-servers"
+[ ! -d "$MCP_SERVERS_DIR" ] && mkdir -p "$MCP_SERVERS_DIR"
 
 # 🔄 Laravel MCP Configuration
 export LARAVEL_MCP_PATH="$MCP_SERVERS_DIR/laravel-mcp"
-alias laravel-mcp="LARAVEL_PATH=\$PWD $MCP_SERVERS_DIR/run-laravel-mcp.sh"
+export LARAVEL_PATH="$HOME/web/shoemoney.ai"
+alias laravel-mcp="$MCP_SERVERS_DIR/run-laravel-mcp.sh"
 
 # 🌟 Helper function to list all available MCP servers
 mcp-list() {

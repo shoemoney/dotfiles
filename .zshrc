@@ -15,6 +15,9 @@ if [[ -f ~/.zsh/fix_path.zsh ]]; then
   source ~/.zsh/fix_path.zsh
 fi
 
+# Add GitHub CLI path
+export PATH="/usr/local/Cellar/gh/2.54.0/bin:$PATH"
+
 # Prevent duplicate compinit calls
 skip_global_compinit=1
 
