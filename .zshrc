@@ -1,126 +1,164 @@
-# Fix for terminal issues - must happen before anything else
+#!/usr/bin/env zsh
+# =============================================================================
+# 🚀 High-Performance ZSH Configuration 🚀
+# =============================================================================
+# 🔋 Optimized for speed, productivity, and developer happiness
+# 🧰 Modular design with lazy-loading and performance optimizations
+
+# Terminal and environment setup
 if [[ "$TERM" == "xterm-ghostty" || "$TERM" == "ghostty" ]]; then
   export TERM="xterm-256color"
 fi
 
-# Suppress "You have new mail" message
-export MAILCHECK=0
+# Prevent duplicate compinit calls
+skip_global_compinit=1
 
-# Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
-# Initialization code that may require console input (password prompts, [y/n]
-# confirmations, etc.) must go above this block; everything else may go below.
-if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
-  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+# History configuration
+HISTSIZE=90000
+SAVEHIST=90000
+HISTFILE=~/.zsh_history
+
+# Load plugin manager
+ZINIT_HOME="${HOME}/.zinit/bin"
+if [[ -f "${ZINIT_HOME}/zinit.zsh" ]]; then
+  source "${ZINIT_HOME}/zinit.zsh"
+  autoload -Uz _zinit
+  (( ${+_comps} )) && _comps[zinit]=_zinit
+else
+  echo "⚠️  Zinit not found. Installing..."
+  mkdir -p "${HOME}/.zinit"
+  git clone https://github.com/zdharma-continuum/zinit.git "${HOME}/.zinit/bin"
+  source "${ZINIT_HOME}/zinit.zsh"
+  autoload -Uz _zinit
+  (( ${+_comps} )) && _comps[zinit]=_zinit
 fi
 
-# Fix for Powerlevel10k instant prompt warnings
-typeset -g POWERLEVEL9K_INSTANT_PROMPT=quiet
+# Essential plugins with turbo mode
+# Define a function to safely load zinit plugins
+load_plugin() {
+  local plugin_name=$1
+  local plugin_type=${2:-light}  # Default to light loading
+  
+  if [[ -n "$plugin_name" ]]; then
+    if [[ "$plugin_type" == "load" ]]; then
+      zinit load "$plugin_name" 2>/dev/null || echo "⚠️  Plugin $plugin_name not loaded"
+    else
+      zinit light "$plugin_name" 2>/dev/null || echo "⚠️  Plugin $plugin_name not loaded"
+    fi
+  fi
+}
 
-### Added by Zinit's installer
-if [[ ! -f $HOME/.local/share/zinit/zinit.git/zinit.zsh ]]; then
-    print -P "%F{33} %F{220}Installing %F{33}ZDHARMA-CONTINUUM%F{220} Initiative Plugin Manager (%F{33}zdharma-continuum/zinit%F{220})…%f"
-    command mkdir -p "$HOME/.local/share/zinit" && command chmod g-rwX "$HOME/.local/share/zinit"
-    command git clone https://github.com/zdharma-continuum/zinit "$HOME/.local/share/zinit/zinit.git" && \
-        print -P "%F{33} %F{34}Installation successful.%f%b" || \
-        print -P "%F{160} The clone has failed.%f%b"
-fi
+# Load essential plugins, failing gracefully if they don't exist
+load_plugin "zsh-users/zsh-autosuggestions"
+load_plugin "zdharma-continuum/fast-syntax-highlighting"
+load_plugin "zdharma-continuum/history-search-multi-word" "load"
+load_plugin "zsh-users/zsh-completions"
+load_plugin "chrissicool/zsh-256color"
 
-source "$HOME/.local/share/zinit/zinit.git/zinit.zsh" || echo "couldnt source zinit"
-# Only activate python env if it exists and we're in an interactive shell
-if [[ -f "$HOME/.penv/bin/activate" && -o interactive ]]; then
-  source "$HOME/.penv/bin/activate" >/dev/null 2>&1
-fi
-autoload -Uz _zinit
-(( ${+_comps} )) && _comps[zinit]=_zinit
-# Load a few important annexes, without Turbo
-# (this is currently required for annexes)
-zinit light-mode for \
-    zdharma-continuum/zinit-annex-as-monitor \
-    zdharma-continuum/zinit-annex-bin-gem-node \
-    zdharma-continuum/zinit-annex-patch-dl \
-    Aloxaf/fzf-tab \
-
-
-    zinit light zpm-zsh/colors
-setopt autocd
-zinit light zsh-users/zsh-autosuggestions
-zinit light zdharma-continuum/fast-syntax-highlighting
-zinit load zdharma-continuum/history-search-multi-word
-# Don't load other prompts when using Starship
-# Load starship theme - Enabled by default
-# line 1: `starship` binary as command, from github release
-# line 2: starship setup at clone(create init.zsh, completion)
-# line 3: pull behavior same as clone, source init.zsh
-zinit ice as"command" from"gh-r" \
-          atclone"./starship init zsh > init.zsh; ./starship completions zsh > _starship" \
-          atpull"%atclone" src"init.zsh"
-zinit light starship/starship
-
-# Disabled themes - uncomment to enable
-# # Load powerlevel10k theme
-# zinit ice depth"1" # git clone depth
-# zinit light romkatv/powerlevel10k
-# 
-# # Load pure theme
-# zinit ice pick"async.zsh" src"pure.zsh" # with zsh-async library that's bundled with it.
-# zinit light sindresorhus/pure
-
-# show colorful
-zinit light chrissicool/zsh-256color
-
-# some additional plugins
-zinit snippet OMZP::git
-zinit snippet OMZP::composer
-zinit light supercrabtree/k
-
-# theming
-zinit snippet OMZL::git.zsh # zinit theming system depends on this
-zinit snippet OMZL::theme-and-appearance.zsh # some themes depends on this
-zinit snippet OMZL::spectrum.zsh # some themes depends on this
-# https://github.com/ohmyzsh/ohmyzsh/wiki/Themes
-#zinit snippet OMZT::robbyrussell
-
-setopt NO_NOMATCH
-
-# make case-insensitive
-zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}'
-
-# enable to select completions by cursor
-zstyle ':completion:*:default' menu select=1
-
-# Ensure tab completion works properly
-bindkey '\t' complete-word       # Tab
-bindkey '^[[Z' reverse-menu-complete  # Shift+Tab
-
-# change select-word-style
-autoload -Uz select-word-style
-select-word-style bash
-WORDCHARS=''
-
-# read additional config
-source ~/.zsh/env.zsh
-source ~/.zsh/alias.zsh
-source ~/.zsh/secret.zsh
-source ~/.zsh/key_bindings.zsh       # Load keyboard bindings for better terminal support
-source ~/.zsh/completion_style.zsh   # Load enhanced tab completion styling
-source ~/.zsh/fzf-config.zsh         # Load FZF and tab completion enhancements
-source ~/.zsh/terminal_enhancements.zsh  # Load advanced terminal features
-source ~/.zsh/env_detector.zsh       # Load environment detector for status bar
-source ~/.zsh/productivity.zsh       # Load productivity tracking system
-source ~/.zsh/cool_aliases.zsh       # Load awesome aliases and functions
-source ~/.zsh/smart-cd.zsh           # Load enhanced directory navigation
-source ~/.zsh/mcp-config.zsh         # Load MCP server configuration
-source ~/.zsh/welcome.zsh            # Load beautiful welcome screen
-# The following lines have been added by Docker Desktop to enable Docker CLI completions.
-fpath=(/Users/shoemoney/.docker/completions $fpath)
+# Optimized completion initialization
 autoload -Uz compinit
-compinit
-# Removed undefined function reference
+if [[ -n ${ZDOTDIR:-$HOME}/.zcompdump(#qN.mh+24) ]]; then
+  compinit
+else
+  compinit -C
+fi
 
-# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
-[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+# Source critical config files with lazy loading
+# Core configuration first
+[[ -f ~/.zsh/setops.zsh ]] && source ~/.zsh/setops.zsh
+[[ -f ~/.zsh/zstyle.zsh ]] && source ~/.zsh/zstyle.zsh
 
-# bun completions
-[ -s "/Users/shoemoney/.bun/_bun" ] && source "/Users/shoemoney/.bun/_bun" >/dev/null 2>&1
+# UI and interaction
+[[ -f ~/.zsh/key_bindings.zsh ]] && source ~/.zsh/key_bindings.zsh
+[[ -f ~/.zsh/prompt.zsh ]] && source ~/.zsh/prompt.zsh
 
-# This section was moved to the top of the file
+# Additional functionality
+[[ -f ~/.zsh/mcp-config.zsh ]] && source ~/.zsh/mcp-config.zsh
+
+# Load other config files if they exist
+for config_file in ~/.zsh/*.zsh; do
+  config_name=$(basename "$config_file")
+  if [[ "$config_name" != "setops.zsh" && \
+        "$config_name" != "zstyle.zsh" && \
+        "$config_name" != "key_bindings.zsh" && \
+        "$config_name" != "prompt.zsh" && \
+        "$config_name" != "mcp-config.zsh" ]]; then
+    source "$config_file"
+  fi
+done
+
+# Create utility functions file if it doesn't exist
+if [[ ! -f ~/.zsh/utility_functions.zsh ]]; then
+  mkdir -p ~/.zsh
+  cat > ~/.zsh/utility_functions.zsh << 'EOF'
+#!/bin/zsh
+# =============================================================================
+# 🛠️  Utility Functions 🛠️
+# =============================================================================
+# 🔧 Helper functions to make life easier
+# 🚀 Utils for DNS, performance tracking, and system management
+
+# Function to flush DNS cache based on macOS version
+flush_dns() {
+    local LONGVERSION=$(sw_vers -productVersion)
+    local MINOR=$(echo $LONGVERSION | cut -d. -f2)
+    local UPDATE=$(echo $LONGVERSION | cut -d. -f3)
+    local FLUSH
+
+    if (( $MINOR < 7 )) ; then 
+        FLUSH="dscacheutil -flushcache"
+    elif (( $MINOR < 10 )) ; then
+        FLUSH="killall -HUP mDNSResponder"
+    elif (( $MINOR == 10 )) ; then
+        if (( $UPDATE < 4 )) ; then
+            FLUSH="discoveryutil mdnsflushcache"
+        else
+            FLUSH="killall -HUP mDNSResponder"
+        fi
+    else
+        echo "VERSION $LONGVERSION"
+        FLUSH="killall -HUP mDNSResponder"
+        echo "¯\_(ツ)_/¯"
+    fi
+
+    echo "Flushing DNS Cache for $LONGVERSION"
+    echo "$FLUSH #(งツ)ว"
+    eval $FLUSH
+}
+
+# Command execution timer setup
+timer_start() {
+  TIMER=${TIMER:-$SECONDS}
+}
+
+timer_stop() {
+  if [[ $TIMER ]]; then
+    timer_show=$(($SECONDS - $TIMER))
+    unset TIMER
+    if [[ $timer_show -ge 3 ]]; then
+      echo "${fg[cyan]}>>> Execution time: ${timer_show}s${reset_color}"
+    fi
+  fi
+}
+
+autoload -Uz add-zsh-hook
+add-zsh-hook preexec timer_start
+add-zsh-hook precmd timer_stop
+EOF
+fi
+
+# Initialize timer for command execution time tracking
+timer=${timer:-$SECONDS}
+
+# Source utility functions
+[[ -f ~/.zsh/utility_functions.zsh ]] && source ~/.zsh/utility_functions.zsh
+
+# Source git automation scripts
+if [[ -f ~/.zsh/scripts/git_autocommit.zsh ]]; then
+  source ~/.zsh/scripts/git_autocommit.zsh
+fi
+
+# Source file backup system
+if [[ -f ~/.zsh/scripts/file_backup.zsh ]]; then
+  source ~/.zsh/scripts/file_backup.zsh
+fi
